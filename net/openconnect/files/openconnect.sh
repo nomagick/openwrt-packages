@@ -20,6 +20,8 @@ proto_openconnect_init_config() {
 	proto_config_add_string "os"
 	proto_config_add_string "csd_wrapper"
 	proto_config_add_array 'form_entry:regex("[^:]+:[^=]+=.*")'
+	proto_config_add_string "dtls_ciphers"
+	proto_config_add_string "dtls12_ciphers"
 	no_device=1
 	available=1
 }
@@ -31,7 +33,7 @@ proto_openconnect_add_form_entry() {
 proto_openconnect_setup() {
 	local config="$1"
 
-	json_get_vars server port interface username serverhash authgroup password password2 token_mode token_secret token_script os csd_wrapper mtu juniper form_entry
+	json_get_vars server port interface username serverhash authgroup password password2 token_mode token_secret token_script os csd_wrapper mtu juniper form_entry dtls_ciphers dtls12_ciphers
 
 	grep -q tun /proc/modules || insmod tun
 	ifname="vpn-$config"
@@ -60,6 +62,12 @@ proto_openconnect_setup() {
 		append cmdline "--cafile /etc/openconnect/ca-vpn-$config.pem"
 		append cmdline "--no-system-trust"
 	}
+
+	# Possible DTLS ciphers were: OC-DTLS1_2-AES128-GCM:OC-DTLS1_2-AES256-GCM:AES256-SHA:AES128-SHA:DES-CBC3-SHA:PSK-NEGOTIATE
+	[ -n "$dtls_ciphers" ] && append cmdline "--dtls-ciphers=$dtls_ciphers"
+
+	# Possible DTLS 1.2 ciphers were: AES128-GCM-SHA256:AES256-GCM-SHA384:PSK-NEGOTIATE
+	[ -n "$dtls12_ciphers" ] && append cmdline "--dtls12-ciphers=$dtls12_ciphers"
 
 	if [ "${juniper:-0}" -gt 0 ]; then
 		append cmdline "--juniper"
