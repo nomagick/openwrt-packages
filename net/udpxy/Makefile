@@ -54,9 +54,10 @@ MAKE_FLAGS += \
 	ALL_CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)"
 
 define Package/udpxy/install
-	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config $(1)/etc/hotplug.d/iface
 	$(INSTALL_CONF) ./files/udpxy.conf $(1)/etc/config/udpxy
 	$(INSTALL_BIN) ./files/udpxy.init $(1)/etc/init.d/udpxy
+	$(INSTALL_BIN) ./files/udpxy.hotplug $(1)/etc/hotplug.d/iface/94-udpxy
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/udpxy $(1)/usr/bin/
 	ln -sf udpxy $(1)/usr/bin/udpxrec
