@@ -1,0 +1,42 @@
+#!/bin/sh
+
+[ "$ACTION" = ifup -o "$ACTION" = ifupdate -o "$ACTION" = ifdown ] || exit 0
+[ "$ACTION" = ifupdate -a -z "$IFUPDATE_ADDRESSES" ] && exit 0
+
+/etc/init.d/udpxy enabled || exit 0
+
+hotplug_instance() {
+	local iname="$1"
+	local disabled bind_if listen_if bind_dev listen_dev
+
+    config_get_bool disabled "$iname" disabled
+    config_get bind_if "$iname" bind
+    config_get listen_if "$iname" source
+
+    [ "$disabled" = 1 ] && return 1
+
+	[ "$bind_if" = "$INTERFACE" -o "$listen_if" = "$INTERFACE" ] && {
+
+        [ "$ACTION" = ifdown ] && {
+            logger -t udpxy "Stoping udpxy instance $iname due to $ACTION of $INTERFACE"
+            /etc/init.d/udpxy istop "$iname"
+            return 0
+        }
+        
+        [ "$ACTION" = ifupdate ] && {
+            logger -t udpxy "Restarting udpxy instance $iname due to $ACTION of $INTERFACE"
+            /etc/init.d/udpxy istop "$iname"
+            /etc/init.d/udpxy start "$iname"
+            return 0
+        }
+
+        [ "$ACTION" = ifup ] && {
+            logger -t udpxy "Starting udpxy instance $iname due to $ACTION of $INTERFACE"
+            /etc/init.d/udpxy start "$iname"
+            return 0
+        }
+    }
+}
+
+config_load udpxy
+config_foreach hotplug_instance udpxy
